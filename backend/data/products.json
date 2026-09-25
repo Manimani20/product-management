@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1,
+    "name": "iPhone 17",
+    "price": 79999,
+    "category": "Electronics",
+    "description": "Apple smartphone with A18 chip"
+  },
+  {
+    "id": 2,
+    "name": "Nike Air Max",
+    "price": 5999,
+    "category": "Footwear",
+    "description": "Classic Nike running shoes"
+  },
+  {
+    "id": 3,
+    "name": "Kindle Paperwhite",
+    "price": 12999,
+    "category": "Electronics",
+    "description": "E-reader by Amazon with 6.8 inch display"
+  },
+  {
+    "id": 4,
+    "name": "Levi's 501 Jeans",
+    "price": 3499,
+    "category": "Clothing",
+    "description": "Classic straight fit denim jeans"
+  },
+  {
+    "id": 5,
+    "name": "Atomic Habits",
+    "price": 499,
+    "category": "Books",
+    "description": "Best-selling book by James Clear on building good habits"
+  }
+]
