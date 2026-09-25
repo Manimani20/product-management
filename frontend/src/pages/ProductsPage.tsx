@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -12,6 +12,15 @@ import ProductTable from '../components/ProductTable';
 import ProductForm from '../components/ProductForm';
 import DeleteConfirmDialog from '../components/DeleteConfirmDialog';
 import Notification from '../components/Notification';
+
+import { useAppDispatch, useAppSelector } from '../store/store';
+import {
+  fetchProducts,
+  addProduct,
+  updateProduct,
+  deleteProduct,
+  clearError,
+} from '../store/productSlice';
 
 import type { Product, CreateProductPayload, AppNotification } from '../types/product';
 
@@ -37,53 +46,92 @@ const CLOSED_NOTIFICATION: AppNotification = {
 /**
  * ProductsPage — main route component.
  *
- * Phase 8: All components composed with local UI state stubs.
- *          Redux wiring + real API calls are added in Phase 9.
+ * Reads product list, loading state, and error from Redux store.
+ * Dispatches fetchProducts on mount, and thunks for add / update / delete.
+ * Shows a Snackbar notification after every operation (success or error).
  */
 function ProductsPage() {
-  // ── Redux state placeholders (replaced in Phase 9) ─────────────────────
-  const products: Product[] = [];
-  const loading: boolean = false;
+  const dispatch = useAppDispatch();
+
+  // ── Redux state ────────────────────────────────────────────────────────
+  const { products, loading, error } = useAppSelector((state) => state.products);
 
   // ── Local UI state ─────────────────────────────────────────────────────
   const [formDialog, setFormDialog] = useState<FormDialogState>(CLOSED_FORM);
   const [deleteDialog, setDeleteDialog] = useState<DeleteDialogState>(CLOSED_DELETE);
   const [notification, setNotification] = useState<AppNotification>(CLOSED_NOTIFICATION);
 
+  // ── Fetch products on mount ────────────────────────────────────────────
+  useEffect(() => {
+    dispatch(fetchProducts());
+  }, [dispatch]);
+
+  // ── Show Redux errors in the notification bar ──────────────────────────
+  useEffect(() => {
+    if (error) {
+      setNotification({ open: true, message: error, severity: 'error' });
+    }
+  }, [error]);
+
   // ── Notification helpers ───────────────────────────────────────────────
-  const showNotification = (message: string, severity: AppNotification['severity']) => {
-    setNotification({ open: true, message, severity });
-  };
-  const closeNotification = () =>
+  const showSuccess = (message: string) =>
+    setNotification({ open: true, message, severity: 'success' });
+
+  const closeNotification = () => {
     setNotification((prev) => ({ ...prev, open: false }));
+    // Clear the Redux error so it doesn't re-trigger the effect
+    dispatch(clearError());
+  };
 
   // ── Form dialog handlers ───────────────────────────────────────────────
   const handleOpenAdd = () => setFormDialog({ open: true, product: null });
+
   const handleOpenEdit = (product: Product) =>
     setFormDialog({ open: true, product });
+
   const handleCloseForm = () => setFormDialog(CLOSED_FORM);
 
-  const handleFormSubmit = (_values: CreateProductPayload) => {
-    // Phase 9: dispatch addProduct / updateProduct thunk here.
-    // For now, just close and show a placeholder notification.
+  const handleFormSubmit = async (values: CreateProductPayload) => {
     const isEdit = formDialog.product !== null;
-    handleCloseForm();
-    showNotification(
-      isEdit ? 'Product updated successfully.' : 'Product added successfully.',
-      'success',
-    );
+
+    if (isEdit && formDialog.product) {
+      // ── Update existing product ──────────────────────────────────────
+      const result = await dispatch(
+        updateProduct({ id: formDialog.product.id, data: values }),
+      );
+      if (updateProduct.fulfilled.match(result)) {
+        handleCloseForm();
+        showSuccess(`"${result.payload.name}" updated successfully.`);
+      }
+      // On rejection, the Redux error effect shows the error Snackbar —
+      // we keep the dialog open so the user can correct and retry.
+    } else {
+      // ── Create new product ───────────────────────────────────────────
+      const result = await dispatch(addProduct(values));
+      if (addProduct.fulfilled.match(result)) {
+        handleCloseForm();
+        showSuccess(`"${result.payload.name}" added successfully.`);
+      }
+    }
   };
 
   // ── Delete dialog handlers ─────────────────────────────────────────────
   const handleOpenDelete = (product: Product) =>
     setDeleteDialog({ open: true, product });
+
   const handleCloseDelete = () => setDeleteDialog(CLOSED_DELETE);
 
-  const handleConfirmDelete = () => {
-    // Phase 9: dispatch deleteProduct thunk here.
-    // For now, just close and show a placeholder notification.
-    handleCloseDelete();
-    showNotification('Product deleted successfully.', 'success');
+  const handleConfirmDelete = async () => {
+    if (!deleteDialog.product) return;
+
+    const { id, name } = deleteDialog.product;
+    const result = await dispatch(deleteProduct(id));
+
+    if (deleteProduct.fulfilled.match(result)) {
+      handleCloseDelete();
+      showSuccess(`"${name}" deleted successfully.`);
+    }
+    // On rejection, the dialog stays open; the error effect shows a Snackbar.
   };
 
   // ── Render ─────────────────────────────────────────────────────────────
@@ -122,13 +170,14 @@ function ProductsPage() {
             color="primary"
             startIcon={<AddIcon />}
             onClick={handleOpenAdd}
+            disabled={loading}
             aria-label="Add new product"
           >
             Add Product
           </Button>
         </Box>
 
-        {/* Product list */}
+        {/* Product list table */}
         <ProductTable
           products={products}
           loading={loading}
@@ -137,7 +186,7 @@ function ProductsPage() {
         />
       </Container>
 
-      {/* ── Dialogs ───────────────────────────────────────────────────── */}
+      {/* ── Add / Edit dialog ─────────────────────────────────────────── */}
       <ProductForm
         open={formDialog.open}
         product={formDialog.product}
@@ -146,6 +195,7 @@ function ProductsPage() {
         onClose={handleCloseForm}
       />
 
+      {/* ── Delete confirmation dialog ────────────────────────────────── */}
       <DeleteConfirmDialog
         open={deleteDialog.open}
         productName={deleteDialog.product?.name ?? ''}
@@ -154,7 +204,7 @@ function ProductsPage() {
         onCancel={handleCloseDelete}
       />
 
-      {/* ── Notification ──────────────────────────────────────────────── */}
+      {/* ── Global notification Snackbar ──────────────────────────────── */}
       <Notification
         open={notification.open}
         message={notification.message}
