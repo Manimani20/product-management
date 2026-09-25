@@ -54,7 +54,9 @@ function ProductsPage() {
   const dispatch = useAppDispatch();
 
   // ── Redux state ────────────────────────────────────────────────────────
-  const { products, loading, error } = useAppSelector((state) => state.products);
+  const { products: rawProducts, loading, error } = useAppSelector((state) => state.products);
+  // Always work with a guaranteed array — guards against any race condition
+  const products = Array.isArray(rawProducts) ? rawProducts : [];
 
   // ── Local UI state ─────────────────────────────────────────────────────
   const [formDialog, setFormDialog] = useState<FormDialogState>(CLOSED_FORM);

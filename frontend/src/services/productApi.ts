@@ -42,7 +42,8 @@ api.interceptors.response.use(
 /** GET /products — fetch all products */
 export const getAll = async (): Promise<Product[]> => {
   const { data } = await api.get<Product[]>('/products');
-  return data;
+  // Guard: ensure we always return an array even if the backend shape changes
+  return Array.isArray(data) ? data : [];
 };
 
 /** GET /products/:id — fetch one product */

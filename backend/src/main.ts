@@ -9,7 +9,7 @@ async function bootstrap() {
   // ── CORS ──────────────────────────────────────────────────────────────────
   // Allow the Vite dev server (and any localhost port) to call this API.
   app.enableCors({
-    origin: ['http://localhost:5173', 'http://localhost:4173'],
+    origin: ['http://localhost:5173', 'http://localhost:4173', 'https://product-management.ungaralamanivardhan.workers.dev'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Accept'],
     credentials: false,

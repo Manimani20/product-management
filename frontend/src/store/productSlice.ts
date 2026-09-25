@@ -93,7 +93,9 @@ const productSlice = createSlice({
       })
       .addCase(fetchProducts.fulfilled, (state, action: PayloadAction<Product[]>) => {
         state.loading = false;
-        state.products = action.payload;
+        // Guard: always store an array — prevents e.map crashes if the
+        // API shape is unexpected or the backend returns something odd.
+        state.products = Array.isArray(action.payload) ? action.payload : [];
       })
       .addCase(fetchProducts.rejected, (state, action) => {
         state.loading = false;

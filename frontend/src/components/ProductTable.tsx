@@ -48,11 +48,15 @@ interface ProductTableProps {
  * - Each row has Edit and Delete icon buttons.
  */
 function ProductTable({ products, loading, onEdit, onDelete }: ProductTableProps) {
+  // Defensive guard: ensure products is always an array before rendering.
+  // Prevents "e.map is not a function" if Redux state is momentarily corrupt.
+  const safeProducts = Array.isArray(products) ? products : [];
+
   if (loading) {
     return <LoadingSpinner message="Loading products…" />;
   }
 
-  if (products.length === 0) {
+  if (safeProducts.length === 0) {
     return (
       <Box
         sx={{
@@ -90,7 +94,7 @@ function ProductTable({ products, loading, onEdit, onDelete }: ProductTableProps
         </TableHead>
 
         <TableBody>
-          {products.map((product) => (
+          {safeProducts.map((product) => (
             <TableRow key={product.id} hover>
               {/* ID */}
               <TableCell>
