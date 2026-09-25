@@ -155,7 +155,7 @@ function ProductForm({ open, product, loading, onSubmit, onClose }: ProductFormP
             onChange={handleTextField('name')}
             onBlur={handleBlur('name')}
             error={touched.name && Boolean(errors.name)}
-            helperText={touched.name ? errors.name : ' '}
+            helperText={(touched.name && errors.name) || ' '}
             required
             fullWidth
             autoFocus
@@ -170,7 +170,7 @@ function ProductForm({ open, product, loading, onSubmit, onClose }: ProductFormP
             onChange={handleTextField('price')}
             onBlur={handleBlur('price')}
             error={touched.price && Boolean(errors.price)}
-            helperText={touched.price ? errors.price : ' '}
+            helperText={(touched.price && errors.price) || ' '}
             required
             fullWidth
             disabled={loading}
@@ -226,7 +226,7 @@ function ProductForm({ open, product, loading, onSubmit, onClose }: ProductFormP
             disabled={loading}
             variant="outlined"
             color="inherit"
-            aria-label="Cancel"
+            aria-label={isEdit ? 'Cancel editing product' : 'Cancel adding product'}
           >
             Cancel
           </Button>
@@ -235,7 +235,7 @@ function ProductForm({ open, product, loading, onSubmit, onClose }: ProductFormP
             disabled={loading}
             variant="contained"
             color="primary"
-            aria-label={isEdit ? 'Save changes' : 'Add product'}
+            aria-label={isEdit ? 'Save product changes' : 'Submit new product'}
             startIcon={
               loading ? <CircularProgress size={16} color="inherit" /> : undefined
             }

@@ -7,4 +7,10 @@ export default defineConfig({
   server: {
     port: 5173,
   },
+  build: {
+    // This is an intentionally simple single-page app — suppress the
+    // default 500 kB chunk size warning; MUI + Redux + Axios together
+    // is expected to exceed it without code-splitting.
+    chunkSizeWarningLimit: 600,
+  },
 });
