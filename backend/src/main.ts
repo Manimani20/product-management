@@ -7,19 +7,35 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // ── CORS ──────────────────────────────────────────────────────────────────
-  // Allow the Vite dev server (and any localhost port) to call this API.
+  // Accept requests from:
+  //   - local Vite dev server
+  //   - any Cloudflare Workers deployment (workers.dev)
+  //   - any Render frontend deployment (onrender.com)
+  // Using a function so we can match patterns rather than hardcode every URL.
   app.enableCors({
-    origin: ['http://localhost:5173', 'http://localhost:4173', 'https://product-management.ungaralamanivardhan.workers.dev'],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (curl, Postman, server-to-server)
+      if (!origin) return callback(null, true);
+
+      const allowed =
+        origin === 'http://localhost:5173' ||
+        origin === 'http://localhost:4173' ||
+        origin.endsWith('.workers.dev') ||
+        origin.endsWith('.onrender.com') ||
+        origin.endsWith('.pages.dev');   // Cloudflare Pages (future-proof)
+
+      if (allowed) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS: origin ${origin} not allowed`));
+      }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Accept'],
     credentials: false,
   });
 
   // ── Global Validation Pipe ─────────────────────────────────────────────────
-  // - whitelist: strips properties not in the DTO
-  // - forbidNonWhitelisted: rejects requests that send unknown properties
-  // - transform: auto-converts plain objects to DTO class instances
-  //              and coerces types (e.g. string "1" → number 1 for @Param)
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -50,15 +66,13 @@ async function bootstrap() {
   });
 
   // ── Start ──────────────────────────────────────────────────────────────────
-  await app.listen(3000);
+  // Render injects PORT at runtime — fall back to 3000 for local dev.
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
 
   console.log('');
-  console.log('╔══════════════════════════════════════════════════╗');
-  console.log('║       Product Management API is running          ║');
-  console.log('╠══════════════════════════════════════════════════╣');
-  console.log('║  API Base    : http://localhost:3000              ║');
-  console.log('║  Swagger UI  : http://localhost:3000/api/docs     ║');
-  console.log('╚══════════════════════════════════════════════════╝');
+  console.log(`Application is running on port ${port}`);
+  console.log(`Swagger UI: http://localhost:${port}/api/docs`);
   console.log('');
 }
 

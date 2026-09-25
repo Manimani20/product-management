@@ -8,10 +8,12 @@ build/
 # NestJS compiled output
 backend/dist/
 
-# Environment files (never commit secrets)
+# Environment files
+# .env contains localhost URLs only — safe to gitignore
 .env
 .env.local
 .env.*.local
+# .env.production IS committed — it contains the public backend URL (no secrets)
 
 # Logs
 *.log
